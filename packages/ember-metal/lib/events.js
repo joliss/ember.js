@@ -116,7 +116,11 @@ function actionsDiff(obj, eventName, otherActions) {
   @param {Function|String} method A function or the name of a function to be called on `target`
   @param {Boolean} once A flag whether a function should only be called once
 */
+window.listenerAddedCount = 0
+window.listenerTotalCount = 0
 function addListener(obj, eventName, target, method, once) {
+  listenerAddedCount += 1
+  listenerTotalCount += 1
   Ember.assert("You must pass at least an object and event name to Ember.addListener", !!obj && !!eventName);
 
   if (!method && 'function' === typeof target) {
@@ -152,6 +156,7 @@ function addListener(obj, eventName, target, method, once) {
   @param {Function|String} method A function or the name of a function to be called on `target`
 */
 function removeListener(obj, eventName, target, method) {
+  window.listenerTotalCount -= 1
   Ember.assert("You must pass at least an object and event name to Ember.removeListener", !!obj && !!eventName);
 
   if (!method && 'function' === typeof target) {
@@ -303,7 +308,9 @@ function watchedEvents(obj) {
   @param {Array} actions Optional array of actions (listeners).
   @return true
 */
+window.eventCount = 0
 function sendEvent(obj, eventName, params, actions) {
+  eventCount += 1;
   // first give object a chance to handle it
   if (obj !== Ember && 'function' === typeof obj.sendEvent) {
     obj.sendEvent(eventName, params);
