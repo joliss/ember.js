@@ -615,10 +615,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
       resolves. Otherwise, non-promise return values are not
       utilized in any way.
    */
-  afterModel: function(resolvedModel, transition, queryParams) {
-    this.redirect(resolvedModel, transition);
-  },
-
+  afterModel: Ember.K,
 
   /**
     @private
@@ -1153,7 +1150,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
 });
 
 function parentRoute(route) {
-  var handlerInfos = route.router.router.targetHandlerInfos;
+  var handlerInfos = route.router.router.state.handlerInfos;
 
   if (!handlerInfos) { return; }
 

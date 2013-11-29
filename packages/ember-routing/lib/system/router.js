@@ -295,7 +295,7 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
   to bubble upward.
  */
 function forEachRouteAbove(originRoute, transition, callback) {
-  var handlerInfos = transition.handlerInfos,
+  var handlerInfos = transition.state.handlerInfos,
       originRouteFound = false;
 
   for (var i = handlerInfos.length - 1; i >= 0; --i) {
