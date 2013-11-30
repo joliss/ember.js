@@ -2,24 +2,6 @@ define("router",
   ["route-recognizer","rsvp","exports"],
   function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
-    /**
-      @private
-
-      This file references several internal structures:
-
-      ## `RecognizedHandler`
-
-      * `{String} handler`: A handler name
-      * `{Object} params`: A hash of recognized parameters
-
-      ## `HandlerInfo` // TODO UPDATE THIS
-
-      * `{Boolean} isDynamic`: whether a handler has any dynamic segments
-      * `{String} name`: the name of a handler
-      * `{Object} handler`: a handler object
-      * `{Object} context`: the active context for the handler
-    */
-
     var RouteRecognizer = __dependency1__;
     var RSVP = __dependency2__;
 
@@ -94,7 +76,7 @@ define("router",
                      // Ignore the fulfilled value returned from afterModel.
                      // Return the value stashed in resolvedModels, which
                      // might have been swapped out in afterModel.
-                     return payload.resolvedModels[name]
+                     return payload.resolvedModels[name];
                    });
       },
 
@@ -133,15 +115,16 @@ define("router",
       becomeResolved: function(payload, resolvedContext) {
         var params = this.params || serialize(this.handler, resolvedContext, this.names);
 
-        this.stashResolvedModel(payload, resolvedContext);
-        payload.params = payload.params || {};
-        payload.params[this.name] = params;
+        if (payload) {
+          this.stashResolvedModel(payload, resolvedContext);
+          payload.params = payload.params || {};
+          payload.params[this.name] = params;
+        }
 
         return new ResolvedHandlerInfo({
           context: resolvedContext,
           name: this.name,
           handler: this.handler,
-          //isDynamic: this.names && this.names.length > 0,
           params: params
         });
       },
@@ -288,8 +271,6 @@ define("router",
     NamedTransitionIntent.prototype = oCreate(TransitionIntent.prototype);
     NamedTransitionIntent.prototype.applyToState = function(oldState, recognizer, getHandler, isIntermediate) {
 
-      var newState = new TransitionState();
-
       var partitionedArgs     = extractQueryParams([this.name].concat(this.contexts)),
         pureArgs              = partitionedArgs[0],
         queryParams           = partitionedArgs[1],
@@ -297,6 +278,13 @@ define("router",
         //handlerInfos          = generateHandlerInfosWithQueryParams({}, handlers, queryParams);
 
       var targetRouteName = handlers[handlers.length-1].handler;
+
+      return this.applyToHandlers(oldState, handlers, getHandler, targetRouteName, isIntermediate);
+    };
+
+    NamedTransitionIntent.prototype.applyToHandlers = function(oldState, handlers, getHandler, targetRouteName, isIntermediate, checkingIfActive) {
+
+      var newState = new TransitionState();
       var objects = this.contexts.slice(0);
 
       var invalidateIndex = handlers.length;
@@ -327,20 +315,29 @@ define("router",
           nonDynamicIndexes.unshift(i);
         }
 
+        if (checkingIfActive) {
+          // If we're performing an isActive check, we want to
+          // serialize URL params with the provided context, but
+          // ignore mismatches between old and new context.
+          newHandlerInfo = newHandlerInfo.becomeResolved(null, newHandlerInfo.context);
+          var oldContext = oldHandlerInfo && oldHandlerInfo.context;
+          if (result.names.length > 0 && newHandlerInfo.context === oldContext) {
+            // If contexts match in isActive test, assume params also match.
+            // This allows for flexibility in not requiring that every last
+            // handler provide a `serialize` method
+            newHandlerInfo.params = oldHandlerInfo && oldHandlerInfo.params;
+          }
+          newHandlerInfo.context = oldContext;
+        }
+
         var handlerToUse = oldHandlerInfo;
         if (newHandlerInfo.shouldSupercede(oldHandlerInfo)) {
           invalidateIndex = i;
           handlerToUse = newHandlerInfo;
         }
 
-        if (isIntermediate) {
-          // TODO: more elegant way of doing this?
-          handlerToUse = new ResolvedHandlerInfo({
-            context: handlerToUse.context,
-            name: handlerToUse.name,
-            handler: handlerToUse.handler,
-            params: handlerToUse.params
-          });
+        if (isIntermediate && !checkingIfActive) {
+          handlerToUse = handlerToUse.becomeResolved(null, handlerToUse.context);
         }
 
         newState.handlerInfos.unshift(handlerToUse);
@@ -552,7 +549,7 @@ define("router",
         this.sequence = Transition.currentSequence++;
         this.promise = state.resolve(router.async, checkForAbort, this).fail(function(result) {
           if (result.wasAborted) {
-            throw new logAbort(transition);
+            throw logAbort(transition);
           } else {
             transition.trigger('error', result.error, transition, result.handlerWithError);
             transition.abort();
@@ -913,19 +910,6 @@ define("router",
 
       isActive: function(handlerName) {
 
-        // Strategy here:
-        // You create an intent and apply it to the most relevant state.
-        // relevant state = active transition or router.
-
-        // NO: always use router.state
-        // This will be set before entering routes (where rendering happens).
-        //
-        // But then there's the problem that we might be provided with
-        // a parent route name, which isn't a valid arg and will throw
-        // an error. So what we can do is loop through the handlerInfos
-        // and find the provided route name in there somewhere, and...
-        // then what?
-
         var partitionedArgs   = extractQueryParams(slice.call(arguments, 1)),
             contexts          = partitionedArgs[0],
             queryParams       = partitionedArgs[1],
@@ -933,40 +917,36 @@ define("router",
             effectiveQueryParams = {};
 
         var targetHandlerInfos = this.state.handlerInfos,
-            found = false, names, object, handlerInfo, handlerObj;
+            found = false, names, object, handlerInfo, handlerObj, i, len;
 
-        if (!targetHandlerInfos) { return false; }
+        if (!targetHandlerInfos.length) { return false; }
 
-        var recogHandlers = this.recognizer.handlersFor(targetHandlerInfos[targetHandlerInfos.length - 1].name);
-        for (var i=targetHandlerInfos.length-1; i>=0; i--) {
-          handlerInfo = targetHandlerInfos[i];
-          if (handlerInfo.name === handlerName) { found = true; }
+        var targetHandler = targetHandlerInfos[targetHandlerInfos.length - 1].name;
+        var recogHandlers = this.recognizer.handlersFor(targetHandler);
 
-          if (found) {
-            var recogHandler = recogHandlers[i];
-
-            merge(activeQueryParams, handlerInfo.queryParams);
-            if (queryParams !== false) {
-              merge(effectiveQueryParams, handlerInfo.queryParams);
-              mergeSomeKeys(effectiveQueryParams, queryParams, recogHandler.queryParams);
-            }
-
-            if (recogHandler.names.length > 0 && contexts.length > 0) {
-              object = contexts.pop();
-
-              if (isParam(object)) {
-                var name = recogHandler.names[0];
-                var params = handlerInfo.params || {};
-                if ("" + object !== params[name]) { return false; }
-              } else if (handlerInfo.context !== object) {
-                return false;
-              }
-            }
-          }
+        var index = 0;
+        for (len = recogHandlers.length; index < len; ++index) {
+          handlerInfo = targetHandlerInfos[index];
+          if (handlerInfo.name === handlerName) { break; }
         }
 
+        if (index === recogHandlers.length) {
+          // The provided route name isn't even in the route hierarchy.
+          return false;
+        }
 
-        return contexts.length === 0 && found && queryParamsEqual(activeQueryParams, effectiveQueryParams);
+        var state = new TransitionState();
+        state.handlerInfos = targetHandlerInfos.slice(0, index + 1);
+        recogHandlers = recogHandlers.slice(0, index + 1);
+
+        var intent = new NamedTransitionIntent({
+          name: targetHandler,
+          contexts: contexts
+        });
+
+        var newState = intent.applyToHandlers(state, recogHandlers, this.getHandler, targetHandler, true, true);
+
+        return newState === state;
       },
 
       trigger: function(name) {
@@ -1055,33 +1035,7 @@ define("router",
     /**
       @private
     */
-
-    function generateHandlerInfosWithQueryParams(currentQueryParams, handlers, queryParams) {
-      var handlerInfos = [];
-
-      for (var i = 0; i < handlers.length; i++) {
-        var handler = handlers[i],
-          handlerInfo = { handler: handler.handler, names: handler.names, context: handler.context, isDynamic: handler.isDynamic },
-          activeQueryParams = {};
-
-        if (queryParams !== false) {
-          mergeSomeKeys(activeQueryParams, currentQueryParams, handler.queryParams);
-          mergeSomeKeys(activeQueryParams, queryParams, handler.queryParams);
-        }
-
-        if (handler.queryParams && handler.queryParams.length > 0) {
-          handlerInfo.queryParams = activeQueryParams;
-        }
-
-        handlerInfos.push(handlerInfo);
-      }
-
-      return handlerInfos;
-    }
-
-    /**
-      @private
-    */
+    /*
     function createQueryParamTransition(router, queryParams, isIntermediate) {
       var currentHandlers = router.currentHandlerInfos,
           currentHandler = currentHandlers[currentHandlers.length - 1],
@@ -1091,6 +1045,7 @@ define("router",
 
       return createNamedTransition(router, [name, queryParams], isIntermediate);
     }
+    */
 
     /**
       @private
@@ -1143,7 +1098,7 @@ define("router",
       });
 
       router.state = newState;
-      var currentHandlerInfos = router.currentHandlerInfos = partition.unchanged.slice()
+      var currentHandlerInfos = router.currentHandlerInfos = partition.unchanged.slice();
 
       forEach(partition.updatedContext, function(handlerInfo) {
         return handlerEnteredOrUpdated(currentHandlerInfos, handlerInfo, false, shouldContinue);
@@ -1406,7 +1361,6 @@ define("router",
       // Resolve with the final handler.
       transition.isActive = false;
 
-      // TODO: de-promise-landify. What needs to happen here?
       return handlerInfos[handlerInfos.length - 1].handler;
     }
 
@@ -1527,7 +1481,6 @@ define("router",
         handler object returned from router.recognizer.handlersFor()
     */
     function serialize(handler, model, names) {
-
       var object = {};
       if (isParam(model)) {
         object[names[0]] = model;
