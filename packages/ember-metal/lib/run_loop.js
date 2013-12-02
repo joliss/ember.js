@@ -8,8 +8,8 @@ var onEnd = function(current, next) {
   Ember.run.currentRunLoop = next;
 };
 
-var Backburner = requireModule('backburner').Backburner,
-    backburner = new Backburner(['sync', 'actions', 'destroy'], {
+import { Backburner } from "backburner";
+var backburner = new Backburner(['sync', 'actions', 'destroy'], {
       sync: {
         before: Ember.beginPropertyChanges,
         after: Ember.endPropertyChanges
