@@ -1,7 +1,3 @@
-define("metamorph",
-  [],
-  function() {
-    "use strict";
     // ==========================================================================
     // Project:   metamorph
     // Copyright: ©2011 My Company Inc. All rights reserved.
@@ -463,5 +459,4 @@ define("metamorph",
       }
     };
 
-    return Metamorph;
-  });
+    export default Metamorph;
