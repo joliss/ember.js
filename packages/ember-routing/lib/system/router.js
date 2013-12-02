@@ -3,7 +3,7 @@
 @submodule ember-routing
 */
 
-var Router = requireModule("router")['default'];
+var Router = requireModule("router").Router;
 var get = Ember.get, set = Ember.set;
 var defineProperty = Ember.defineProperty;
 
@@ -503,7 +503,5 @@ Ember.Router.reopenClass({
     return path.join(".");
   }
 });
-
-Router.Transition.prototype.send = Router.Transition.prototype.trigger;
 
 
