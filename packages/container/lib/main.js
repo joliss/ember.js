@@ -12,10 +12,6 @@ The public api, specified on the application namespace should be considered the 
 */
 // Ember.MODEL_FACTORY_INJECTIONS = false || !!Ember.ENV.MODEL_FACTORY_INJECTIONS;
 
-define("container",
-  [],
-  function() {
-
     // A safe and simple inheriting object.
     function InheritingDict(parent) {
       this.parent = parent;
@@ -886,5 +882,4 @@ define("container",
       injections.push({ property: property, fullName: injectionName });
     }
 
-    return Container;
-});
+    export default Container;
