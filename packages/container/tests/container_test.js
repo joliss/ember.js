@@ -1,5 +1,5 @@
 var passedOptions;
-var Container = requireModule('container');
+import Container from 'container';
 
 function setProperties(object, properties) {
   for (var key in properties) {
