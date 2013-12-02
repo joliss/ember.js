@@ -9,7 +9,7 @@ require("ember-views/views/view");
 */
 
 var set = Ember.set, get = Ember.get;
-var Metamorph = requireModule('metamorph');
+import Metamorph from "metamorph";
 
 function notifyMutationListeners() {
   Ember.run.once(Ember.View, 'notifyMutationListeners');

@@ -1,5 +1,5 @@
 var passedOptions;
-var Container = requireModule('container');
+import Container from 'container';
 
 var o_create = Object.create || (function(){
   function F(){}

@@ -9,7 +9,7 @@ require("metamorph");
 */
 
 var get = Ember.get, set = Ember.set, handlebarsGet = Ember.Handlebars.get;
-var Metamorph = requireModule('metamorph');
+import Metamorph from 'metamorph';
 
 require('ember-views/views/view');
 require('ember-handlebars/views/metamorph_view');
