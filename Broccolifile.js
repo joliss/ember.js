@@ -1,8 +1,13 @@
-module.exports = function (pkg, broccoli) {
+module.exports = function (factory, broccoli) {
   var fs = require('fs')
   var path = require('path')
 
-  pkg.setAssetDirectory('packages')
+  var pkg = factory.makePackage()
+    .map({
+      'packages': '/'
+    })
+
+  return [pkg]
 
   // // Ember and Broccoli disagree about the terminology
   // var emberPackage = new broccoli.readers.Package('packages', new broccoli.transformers.preprocessors.PreprocessorPipeline([
