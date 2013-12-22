@@ -1,0 +1,11 @@
+import "ember-handlebars/helpers/shared";
+import "ember-handlebars/helpers/binding";
+import "ember-handlebars/helpers/collection";
+import "ember-handlebars/helpers/view";
+import "ember-handlebars/helpers/unbound";
+import "ember-handlebars/helpers/debug";
+import "ember-handlebars/helpers/each";
+import "ember-handlebars/helpers/template";
+import "ember-handlebars/helpers/partial";
+import "ember-handlebars/helpers/yield";
+import "ember-handlebars/helpers/loc";

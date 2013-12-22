@@ -1,0 +1,13 @@
+import "ember-runtime/mixins/array";
+import "ember-runtime/mixins/comparable";
+import "ember-runtime/mixins/copyable";
+import "ember-runtime/mixins/enumerable";
+import "ember-runtime/mixins/freezable";
+import "ember-runtime/mixins/mutable_array";
+import "ember-runtime/mixins/mutable_enumerable";
+import "ember-runtime/mixins/observable";
+import "ember-runtime/mixins/target_action_support";
+import "ember-runtime/mixins/evented";
+import "ember-runtime/mixins/deferred";
+import "ember-runtime/mixins/action_handler";
+import "ember-runtime/mixins/promise_proxy";
